@@ -18,7 +18,7 @@ Run:
 	-o, --outBed=<bedfile>              output bed file
 	-r, --refFasta=<fasta file>         reference fasta file
 	-p, --cores=<int>                   number of cores to use                                         default: 1
-	-y, --hyp=<hyp1>|<hyp2>             hypothesis to use, can be <hyp1> or <hyp2>                     default: hyp1
+	-y, --hyp=<hyp1>|<hyp2>             hypothesis to use, can be <hyp1> or <hyp2>                     default: hyp2
 	-s, --seqErr=<float>                sequencing error probability                                   default: 0.01
 	-t, --pThreshold=<float>            False discovery rate cut off                                   default: 0.01
 	-m, --model=<knn>                   model for prediction, can be anything available in R::caret    default: knn
