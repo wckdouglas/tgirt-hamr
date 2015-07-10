@@ -140,7 +140,9 @@ void readStream(int qualThreshold, int coverageThreshold)
 
 void printHeader()
 {
-    printf("chrom\tstart\tend\tref\tcov\tstrand\tA\tC\tT\tG\tinsertion\tdeletion\n");
+    cout << "chrom\tstart\tend\tref\tcov" ;
+	cout << "\tstrand\tA\tC\tT\tG\t";
+	cout << "insertion\tdeletion\n";
 }
 
 // main function
