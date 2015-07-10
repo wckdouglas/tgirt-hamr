@@ -35,23 +35,42 @@ void printTable(string chrom, string start, string ref,
 	char strand ;
 	int end = atoi(start.c_str()) + 1;
 	int cov;
+	string realRef;
+	int adenosine, thymine, cytidine, guanosine;
+	int referenceCount;
+	int print = 0;
 	transform(ref.begin(), ref.end(), ref.begin(), ::toupper);
+	// clean up forward/reverse strand data
 	if (A + C + T + G > 0)
 	{
 		strand = '+';
-		cov = A + C + T + G + refCount;
-		cout << chrom << '\t' <<start << '\t' << end << '\t';
-		cout << ref << '\t' << cov << '\t' << strand << '\t';
-		cout << A << '\t' << C << '\t' << T << '\t' << G << '\t';
-		cout << insertion << '\t' << deletion << '\n';
+		realRef = ref;
+		adenosine = A;
+		cytidine = C;
+		thymine = T;
+		guanosine = G;
+		referenceCount = refCount;
+		print = 1;
 	}
 	else if (a + c + t + g > 0)
 	{
 		strand = '-';
+		realRef = reverse_complement(ref);
 		cov = a + c + t + g + refCountrev;
+		adenosine = a;
+		cytidine = c;
+		thymine = t;
+		guanosine = g;
+		referenceCount = refCountrev;
+		print = 1;
+	}
+	//print all variables 
+	if (print == 1)
+	{
+		cov = adenosine + cytidine + thymine + guanosine + referenceCount;
 		cout << chrom << '\t' <<start << '\t' << end << '\t';
-		cout << reverse_complement(ref) << '\t' << cov << '\t' << strand << '\t';
-		cout << a << '\t' << c << '\t' << t << '\t' << g << '\t';
+		cout << realRef << '\t' << cov << '\t' << strand << '\t';
+		cout << adenosine << '\t' << cytidine << '\t' << thymine << '\t' << guanosine << '\t';
 		cout << insertion << '\t' << deletion << '\n';
 	}
 }
