@@ -26,6 +26,6 @@ Run:
 	-c, --cov=<int>                     coverage cutoff for position to retain                         default: 10
 	-h, --help                          print out usage
 
-Dependencies:
+Dependencies:    
 softwares: R >=3.1.0, python = 2.7, samtools >= 1.2, gcc > 4.4.5     
 R-package: dplyr, caret, data.table, stringr, tidyr, Rcpp, getopt, doMC, kernlab
