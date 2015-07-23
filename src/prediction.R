@@ -136,7 +136,7 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
 	result <- lapply(bases,fitAndPredict,dataTable,predictTable,model) 
 	result <- result[sapply(result,function(x) is.data.frame(x))] %>%
 				do.call(rbind,.) %>%
-				select(chrom, start, end, ref, cov, strand, label) %>%
+				select(chrom, start, end, ref, cov, strand, A, C, T, G, deletion, label) %>%
 				write.table(tablename, sep='\t',quote=F,row.names=F,col.names=F)
 	return (0)
 }
