@@ -15,7 +15,7 @@ fitControl <- trainControl(method = 'repeatedcv',
 	number = 6,
 	allowParallel = T)
 
-binomTest <- function(a,b){
+binomTest <- function(a,b,seqErr){
 	return(pbinom(b-a,b, p = 1- seqErr, lower.tail=T))
 }
 
@@ -85,26 +85,10 @@ fitAndPredict <- function(base,dataTable,predictionTable,model){
 	}
 }
 
-transformTable <- function(df,seqErr,pCutOff){
-	df <- df %>%
-		mutate(mismatch = A + C + T +G,
-			A = A / cov,
-			T = T / cov,
-			G = G / cov,
-			C = C / cov,
-			deletion = deletion / cov,
-			p1 = mapply(binomTest, mismatch,cov),
-			padj1 = FDRcontrol(p1,pCutOff),
-			het = heterozygote(A,C,T,G,cov),
-			p2 = mapply(binomTest,het,cov),
-			padj2 = FDRcontrol(p2,pCutOff))  %>%
-			normalized()
-	return(df)
-}
-
 filterSets <-function(df,hyp){
-	if (hyp == 'hyp1') { df = df[padj1==1]}
-	else if (hyp == 'hyp2') { df = df[padj2==1]}
+	if (hyp == 'hyp1') { df = df %>% filter(padj1==1)}
+	else if (hyp == 'hyp2') { df = df %>% filter(padj2==1)}
+    return(df)
 }
 
 main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath) {
@@ -115,19 +99,19 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
 	dataTable <- dataTable %>%
 		fread(colClasses=c('character','numeric','character',
 						   rep('numeric',7),rep('character',2))) %>%
-		transformTable(seqErr,pCutOff) %>%
-		rename(label = abbrev) %>%
-		mutate(label =  mergeType(label))  %>%
-		filterSets('hyp1') 
+		transformDF(seqErr,pCutOff,binomTest) %>%
+		mutate(label =  mergeType(as.character(abbrev)))  %>%
+		filterSets(hyp) %>%
+        tbl_df()
 	dataTable <- dataTable %>%
 		group_by(label) %>%
 		summarize(count = n()) %>%
-		filter(count > 10) %>%
+		filter(count > 6) %>%
 		inner_join(dataTable)
 
 	predictTable <- predictTable %>%
 		fread() %>%
-		transformTable(seqErr,pCutOff) %>%
+		transformDF(seqErr,pCutOff,binomTest) %>%
 		filterSets(hyp) 
 	cat('Read Data!\n')
 	

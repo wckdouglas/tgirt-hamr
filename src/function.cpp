@@ -112,30 +112,6 @@ stringList string_split(stringList x, char sep, int num)
     	return result;
 }
 
-//[[Rcpp::export]]
-stringList mergeType(stringList realbase)
-{
-    int i, size = realbase.size();
-    stringList out(size);
-
-    for (i = 0 ; i < size; i++)
-    {
-		string base = realbase[i];
-        if (base == "m2G" || base == "m2,2G")
-        {
-            out[i] = "m2G|m2,2G";
-        }
-        else if (realbase[i] == "m6A" || base == "m6,6A")
-		{
-			out[i] = "m6A|m6,6A";
-		}
-		else 
-        {
-            out[i] = realbase[i];
-        }
-    }
-    return out;
-}
 
 //[[Rcpp::export]]
 vector<double> heterozygote(NumericVector A, NumericVector C, 
@@ -158,27 +134,91 @@ vector<double> heterozygote(NumericVector A, NumericVector C,
 	return result;
 }
 
-//[[Rcpp::export]]
-DataFrame normalized(DataFrame df)
+string mergingModificationTypes(string base)
 {
-	NumericVector A = df["A"] ;
-	NumericVector C = df["C"] ;
-	NumericVector T = df["T"] ;
-	NumericVector G = df["G"] ;
-	NumericVector cov = df["cov"] ;
-	NumericVector mismatch = df["mismatch"];
-	int size = A.size();
-	NumericVector newA(size), newC(size), newT(size), newG(size);
-	for (int i = 0 ; i < size ; i ++)
+    string out;
+    if (base == "m2G" || base == "m2,2G")
+    {
+        out = "m2G|m2,2G";
+    }
+    else if (base == "m6A" || base == "m6,6A")
 	{
-		newA[i] = A[i] * cov[i] / mismatch[i];
-		newC[i] = C[i] * cov[i] / mismatch[i];
-		newT[i] = T[i] * cov[i] / mismatch[i];
-		newG[i] = G[i] * cov[i] / mismatch[i];
+	    out = "m6A|m6,6A";
 	}
+	else 
+    {
+        out = base;
+    }
+    return out;
+}
+
+//[[Rcpp::export]]
+stringList mergeType(stringList realbase)
+{
+    int i, size = realbase.size();
+    stringList out(size);
+
+    for (i = 0 ; i < size; i++)
+    {
+		string base = realbase[i];
+        out[i] = mergingModificationTypes(base);
+    }
+    return out;
+}
+
+int heterozygotePerBase(int A, int C, int T, int G, int cov, int deletion)
+{
+	vector <int> baseCount(5);
+	baseCount[0] = A;
+	baseCount[1] = C;
+	baseCount[2] = T;
+	baseCount[3] = G;
+	baseCount[4] = cov - accumulate(baseCount.begin(),baseCount.end() - 1,0);
+	sort(baseCount.begin(),baseCount.end(),greater<int>());
+	int result =  cov - ( baseCount[0] + baseCount[1]) + deletion;
+	return result;
+}
+
+//[[Rcpp::export]]
+DataFrame transformDF (DataFrame df, double seqErr, double pCutOff, Function binom)
+{
+	NumericVector A = df["A"], C = df["C"], T = df["T"], G = df["G"];
+	NumericVector cov = df["cov"], deletion = df["deletion"];
+	int nrow = A.size();
+
+	//result vector
+	NumericVector mismatch(nrow), adjustedCov(nrow);
+	NumericVector newA(nrow), newC(nrow), newT(nrow), newG(nrow),newDeletion(nrow);
+	NumericVector p1(nrow),padj1(nrow),het(nrow),p2(nrow),padj2(nrow);
+	double cov_i, mismatch_i;
+	for (int i = 0; i < A.size(); i++)
+	{
+		mismatch_i = A[i] + C[i] + T[i] + G[i] + deletion[i];
+		cov_i = cov[i] + deletion[i];
+		adjustedCov[i] = cov_i;
+		mismatch[i] = mismatch_i;
+		newA[i] = A[i]/mismatch_i;
+		newC[i] = C[i]/mismatch_i;
+		newT[i] = T[i]/mismatch_i;
+		newG[i] = G[i]/mismatch_i;
+		newDeletion[i] = deletion[i]/mismatch_i;
+		p1[i] =	as<double>(binom(mismatch_i,cov_i,seqErr));
+		het[i] = heterozygotePerBase(A[i],C[i],T[i],G[i],cov[i],deletion[i]);
+		p2[i] = as<double>(binom(het[i],cov_i,seqErr));
+	}
+	padj1 = FDRcontrol(p1,pCutOff);
+	padj2 = FDRcontrol(p2,pCutOff);
 	df["A"] = newA;
 	df["T"] = newT;
 	df["C"] = newC;
 	df["G"] = newG;
+	df["mismatch"] = mismatch;
+	df["cov"] = adjustedCov;
+	df["p1"] = p1;
+	df["p2"] = p2;
+	df["padj1"] = padj1;
+	df["padj2"] = padj2;
+	df["het"] = het;
+	df["deletion"] = newDeletion;
 	return df;
 }

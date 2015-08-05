@@ -8,9 +8,8 @@ import getopt
 
 def pileup(bamFile, refFasta, resultFile, programpath, qualThresh, covThresh):
     start = time.time()
-    command = 'samtools mpileup -d 1000000 -f %s %s \
-        | %s/bin/pileup2bed - %i %i > %s' \
-        %(refFasta, bamFile, programpath, qualThresh, covThresh, resultFile)
+    command = 'samtools mpileup -d 1000000 -f %s %s ' %(refFasta,bamFile)+\
+        '| %s/bin/pileup2bed - %i %i > %s' %(programpath, qualThresh, covThresh, resultFile)
     print command
     os.system(command)
     usedtime= time.time() - start
@@ -23,11 +22,9 @@ def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,en
     seqErr = 0.01
     pThreshold = 0.05
     model = 'knn'
-    command = 'Rscript %s/src/prediction.R -o %s -t %s \
-                -i %s -e %s -h %s -s %.4f -p %.4f \
-                -m %s -d %s/table -f %s/src' \
-	        %(programpath,resultBed,cores,inFile,enzyme,hyp,seqErr,\
-                pThreshold,model, programpath,programpath)
+    command = 'Rscript %s/src/prediction.R -o %s -t %s ' %(programpath,resultBed,cores)+\
+                '-i %s -e %s -h %s -s %.4f -p %.4f ' %(inFile,enzyme,hyp,seqErr,pThreshold)+\
+                '-m %s -d %s/table -f %s/src' %(model, programpath,programpath)
     print command
     os.system(command)
     usedtime= time.time() - start
@@ -55,8 +52,10 @@ def main():
     programpath = '/'.join(os.path.abspath(__file__).split('/')[:-2])
     programname = sys.argv[0]
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "e:i:o:r:p:y:s:t:m:q:c:h", \
-                ['enzyme=','inBam=', 'outBed=','refFasta=','cores=','hyp=','seqErr=','pThreshold=','model=','qual=','cov=','help'])
+	opts, args = getopt.getopt(sys.argv[1:], \
+                "e:i:o:r:p:y:s:t:m:q:c:h", \
+                ['enzyme=','inBam=', 'outBed=','refFasta=','cores=',\
+                'hyp=','seqErr=','pThreshold=','model=','qual=','cov=','help'])
     except getopt.GetoptError as err:
         usage(programname)
     cores = 1
