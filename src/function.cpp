@@ -166,7 +166,7 @@ stringList mergeType(stringList realbase)
     return out;
 }
 
-int heterozygotePerBase(int A, int C, int T, int G, int cov, int deletion)
+int heterozygotePerBase(int A, int C, int T, int G, int cov)
 {
 	vector <int> baseCount(5);
 	baseCount[0] = A;
@@ -175,7 +175,7 @@ int heterozygotePerBase(int A, int C, int T, int G, int cov, int deletion)
 	baseCount[3] = G;
 	baseCount[4] = cov - accumulate(baseCount.begin(),baseCount.end() - 1,0);
 	sort(baseCount.begin(),baseCount.end(),greater<int>());
-	int result =  cov - ( baseCount[0] + baseCount[1]) + deletion;
+	int result =  cov - ( baseCount[0] + baseCount[1]);
 	return result;
 }
 
@@ -193,17 +193,16 @@ DataFrame transformDF (DataFrame df, double seqErr, double pCutOff, Function bin
 	double cov_i, mismatch_i;
 	for (int i = 0; i < A.size(); i++)
 	{
-		mismatch_i = A[i] + C[i] + T[i] + G[i] + deletion[i];
-		cov_i = cov[i] + deletion[i];
+		mismatch_i = A[i] + C[i] + T[i] + G[i];
+		cov_i = cov[i];
 		adjustedCov[i] = cov_i;
 		mismatch[i] = mismatch_i;
 		newA[i] = A[i]/mismatch_i;
 		newC[i] = C[i]/mismatch_i;
 		newT[i] = T[i]/mismatch_i;
 		newG[i] = G[i]/mismatch_i;
-		newDeletion[i] = deletion[i]/mismatch_i;
 		p1[i] =	as<double>(binom(mismatch_i,cov_i,seqErr));
-		het[i] = heterozygotePerBase(A[i],C[i],T[i],G[i],cov[i],deletion[i]);
+		het[i] = heterozygotePerBase(A[i],C[i],T[i],G[i],cov[i]);
 		p2[i] = as<double>(binom(het[i],cov_i,seqErr));
 	}
 	padj1 = FDRcontrol(p1,pCutOff);

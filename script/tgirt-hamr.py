@@ -19,9 +19,6 @@ def pileup(bamFile, refFasta, resultFile, programpath, qualThresh, covThresh):
 def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,enzyme, hyp):
     start = time.time()
     model = 'knn'
-    seqErr = 0.01
-    pThreshold = 0.05
-    model = 'knn'
     command = 'Rscript %s/src/prediction.R -o %s -t %s ' %(programpath,resultBed,cores)+\
                 '-i %s -e %s -h %s -s %.4f -p %.4f ' %(inFile,enzyme,hyp,seqErr,pThreshold)+\
                 '-m %s -d %s/table -f %s/src' %(model, programpath,programpath)
@@ -98,6 +95,12 @@ def main():
             cov = int(arg)
         else:
             assert False, "unused option %s" %option
+    message = '##################################' +\
+              '#Using seqErr:        %.3f\n' %(seqErr) +\
+              '#Using cores:         %s\n' %(cores) +\
+              '#Using FDR threshold: %.3f\n' %(pThreshold) + \
+              '#################################'
+    sys.stderr.write(message)
 	
     if bamFile == '' or outBedFile == '' or refFasta == '' or enzyme == '':
         sys.stderr.write('options: -i, -r, -e, -o are required!!!\n')
@@ -117,10 +120,10 @@ def main():
     prediction(tempFile, outBedFile, cores, programpath, model, seqErr,pThreshold,enzyme, hyp)
 
     #remove temp files
-    try:
-        os.remove(tempFile)
-    except OSError:
-        pass
+    #try:
+    #    os.remove(tempFile)
+    #except OSError:
+    #    pass
 	
     # print summary
     usedTime = time.time() - start

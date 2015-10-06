@@ -1,7 +1,6 @@
-#!/usr/bin/env Rscript
+#!/bin/env Rscript
 
 suppressMessages(library(data.table))
-suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))
 suppressMessages(library(stringr))
 suppressMessages(library(Rcpp))
@@ -9,6 +8,7 @@ suppressMessages(library(getopt))
 suppressMessages(library(caret))
 suppressMessages(library(doMC))
 suppressMessages(library(kernlab))
+suppressMessages(library(dplyr))
 
 fitControl <- trainControl(method = 'repeatedcv',
 	repeats = 10,
@@ -35,27 +35,28 @@ filterBase <- function(dataframe,base){
 }
 
 modeling <- function(base,df, model){
-	cat('start modeling\n')
+	message('start modeling..')
 	df <- df %>% filterBase(base)
 	#split data
 	trainMat <- select(df, -label)
 	trainClass <- factor(df$label)
 	if (length(unique(trainClass)) > 1){
-		cat ('Start training',model,base,'\n')
+		message ('Start training',model,base,'\n')
 		modelFit <- train(y = trainClass, 
 				x = trainMat,
 				method = model,
 				trControl = fitControl)
+        message('Trained ',model, ' for ',base)
 		return(modelFit)
 	}else{
-		cat ('Skipped',model,base,'\n')
+		message ('Skipped ',model,' ',base)
 	}
 }
 
 
 predicting <- function(base,model,df){
 	#subsetting data
-	cat('start prediction\n')
+    message ('start prediction')
 	df <- filter(df,ref == base )
 	if (nrow(df) != 0){
 		if (base == 'A'){
@@ -76,7 +77,7 @@ predicting <- function(base,model,df){
 
 fitAndPredict <- function(base,dataTable,predictionTable,model){
 	modelFit <- modeling(base,dataTable, model)
-	cat('Established model\n')
+	message('Established model')
 	if(!is.null(modelFit)){
 		df <- predicting(base,modelFit,predictionTable)
 		return(df)
@@ -113,7 +114,7 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
 		fread() %>%
 		transformDF(seqErr,pCutOff,binomTest) %>%
 		filterSets(hyp) 
-	cat('Read Data!\n')
+	message('Read Data!')
 	
 	bases = c('A','C','T','G')
 	tablename <- resultFile
@@ -152,6 +153,6 @@ dbpath <- opt$dbpath
 sourceCpp(paste(path,'function.cpp',sep='/'))
 
 #============== run program ========================
-cat('Using:',model,'for', enzyme,'\n')
+message('Using: ',model,' for ', enzyme)
 main(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
-cat ('Finished:',model,'for',enzyme,'\n')
+message('Finished: ',model,' for ',enzyme)
