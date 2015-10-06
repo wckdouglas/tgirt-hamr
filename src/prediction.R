@@ -1,6 +1,6 @@
 #!/bin/env Rscript
 
-suppressMessages(library(data.table))
+suppressMessages(library(readr))
 suppressMessages(library(tidyr))
 suppressMessages(library(stringr))
 suppressMessages(library(Rcpp))
@@ -21,7 +21,7 @@ binomTest <- function(a,b,seqErr){
 
 filterBase <- function(dataframe,base){
 	#subsetting data
-	dataframe <- dataframe %>% filter(ref == base )
+	dataframe <- subset(dataframe,ref == base)
 	if (base == 'A'){
 		df <- subset(dataframe,select=c(label,C,T,G,deletion))
 	}else if(base == 'C'){
@@ -41,7 +41,7 @@ modeling <- function(base,df, model){
 	trainMat <- select(df, -label)
 	trainClass <- factor(df$label)
 	if (length(unique(trainClass)) > 1){
-		message ('Start training',model,base,'\n')
+		message ('Start training ',model,' ',base,'\n')
 		modelFit <- train(y = trainClass, 
 				x = trainMat,
 				method = model,
@@ -57,7 +57,7 @@ modeling <- function(base,df, model){
 predicting <- function(base,model,df){
 	#subsetting data
     message ('start prediction')
-	df <- filter(df,ref == base )
+	df <- subset(df,ref == base )
 	if (nrow(df) != 0){
 		if (base == 'A'){
 			dataMat <- subset(df,select=c(C,T,G,deletion))
@@ -87,19 +87,15 @@ fitAndPredict <- function(base,dataTable,predictionTable,model){
 }
 
 filterSets <-function(df,hyp){
-	if (hyp == 'hyp1') { df = df %>% filter(padj1==1)}
-	else if (hyp == 'hyp2') { df = df %>% filter(padj2==1)}
+	if (hyp == 'hyp1') { df = subset(df,padj1==1)}
+	else if (hyp == 'hyp2') { df = subset(df,padj2==1)}
     return(df)
 }
 
 main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath) {
-	dataTable <- paste0(dbpath,
-					'/',
-					enzyme,
-					'Table.tsv')
+	dataTable <- str_c(dbpath,'/',enzyme,'Table.tsv')
 	dataTable <- dataTable %>%
-		fread(colClasses=c('character','numeric','character',
-						   rep('numeric',7),rep('character',2))) %>%
+		read_tsv(col_type= 'cncnnnnnnncc') %>%
 		transformDF(seqErr,pCutOff,binomTest) %>%
 		mutate(label =  mergeType(as.character(abbrev)))  %>%
 		filterSets(hyp) %>%
@@ -110,8 +106,9 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
 		filter(count > 6) %>%
 		inner_join(dataTable)
 
+
 	predictTable <- predictTable %>%
-		fread() %>%
+		read_tsv %>%
 		transformDF(seqErr,pCutOff,binomTest) %>%
 		filterSets(hyp) 
 	message('Read Data!')
@@ -120,9 +117,15 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
 	tablename <- resultFile
 	result <- lapply(bases,fitAndPredict,dataTable,predictTable,model) 
 	result <- result[sapply(result,function(x) is.data.frame(x))] %>%
-				do.call(rbind,.) %>%
-				select(chrom, start, end, ref, cov, strand, A, C, T, G, deletion, label) %>%
-				write.table(tablename, sep='\t',quote=F,row.names=F,col.names=F)
+		do.call(rbind,.) 
+
+    if (length(result)<1){
+        stop("No modification sites! \n")
+    }else{
+        result %>%
+	        select(chrom, start, end, ref, cov, strand, A, C, T, G, deletion, label) %>%
+		    write.table(tablename, sep='\t',quote=F,row.names=F,col.names=F)
+    }
 	return (0)
 }
 
@@ -150,7 +153,7 @@ path <- opt$dir
 seqErr <- opt$seqErr
 pCutOff <- opt$pCutOff
 dbpath <- opt$dbpath
-sourceCpp(paste(path,'function.cpp',sep='/'))
+sourceCpp(str_c(path,'function.cpp',sep='/'))
 
 #============== run program ========================
 message('Using: ',model,' for ', enzyme)

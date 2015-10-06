@@ -95,11 +95,11 @@ def main():
             cov = int(arg)
         else:
             assert False, "unused option %s" %option
-    message = '##################################' +\
+    message = '##################################\n' +\
               '#Using seqErr:        %.3f\n' %(seqErr) +\
               '#Using cores:         %s\n' %(cores) +\
               '#Using FDR threshold: %.3f\n' %(pThreshold) + \
-              '#################################'
+              '#################################\n'
     sys.stderr.write(message)
 	
     if bamFile == '' or outBedFile == '' or refFasta == '' or enzyme == '':
