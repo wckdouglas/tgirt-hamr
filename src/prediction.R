@@ -123,7 +123,8 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
         stop("No modification sites! \n")
     }else{
         result %>%
-	        select(chrom, start, end, ref, cov, strand, A, C, T, G, deletion, label) %>%
+#	        select(chrom, start, end, ref, cov, strand, A, C, T, G, deletion, label) %>%
+	        select(chrom, start, end, ref, cov, strand, label) %>%
 		    write.table(tablename, sep='\t',quote=F,row.names=F,col.names=F)
     }
 	return (0)
