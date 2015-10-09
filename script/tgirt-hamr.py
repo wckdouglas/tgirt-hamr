@@ -108,7 +108,7 @@ def main():
 
     # ========================   start pipeline =====================================
     start = time.time()
-    sample = outBedFile.split('/')[-1].split('.')[0]
+    sample = outBedFile.split('/')[-1].rsplit('.',-1)
     resultpath = '/'.join(outBedFile.split('/')[:-1])
     if resultpath == '':
         resultpath = './'
