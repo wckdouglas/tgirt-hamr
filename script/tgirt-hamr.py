@@ -16,12 +16,17 @@ def pileup(bamFile, refFasta, resultFile, programpath, qualThresh, covThresh):
     sys.stderr.write('Pileup used time: %.3f min\n' %(usedtime/60))
     return 0
 
-def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,enzyme, hyp):
+def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,enzyme, hyp, devMode):
     start = time.time()
     model = 'knn'
+    if devMode == 1:
+        dev = '--dev'
+    else:
+        dev = ' '
     command = 'Rscript %s/src/prediction.R -o %s -t %s ' %(programpath,resultBed,cores)+\
                 '-i %s -e %s -h %s -s %.4f -p %.4f ' %(inFile,enzyme,hyp,seqErr,pThreshold)+\
-                '-m %s -d %s/table -f %s/src' %(model, programpath,programpath)
+                '-m %s -d %s/table -f %s/src '  %(model, programpath,programpath) +\
+                dev
     print command
     os.system(command)
     usedtime= time.time() - start
@@ -42,6 +47,7 @@ def usage(programname):
     sys.stderr.write('-m, --model <knn>                   model for prediction, can be anything available in R::caret    default: knn\n')
     sys.stderr.write('-q, --qual <int>                    base quality cut off for retaining bases from read             default: 33\n')
     sys.stderr.write('-c, --cov <int>                     coverage cutoff for position to retain                         default: 10\n')
+    sys.stderr.write('-d, --dev                           retain intermediate files\n')
     sys.stderr.write('-h, --help                          print out usage\n')
     sys.exit()
 
@@ -49,10 +55,10 @@ def main():
     programpath = '/'.join(os.path.abspath(__file__).split('/')[:-2])
     programname = sys.argv[0]
     try:
-	opts, args = getopt.getopt(sys.argv[1:], \
-                "e:i:o:r:p:y:s:t:m:q:c:h", \
+        opts, args = getopt.getopt(sys.argv[1:], \
+                "e:i:o:r:p:y:s:t:m:q:c:hv", \
                 ['enzyme=','inBam=', 'outBed=','refFasta=','cores=',\
-                'hyp=','seqErr=','pThreshold=','model=','qual=','cov=','help'])
+                'hyp=','seqErr=','pThreshold=','model=','qual=','cov=','help','dev'])
     except getopt.GetoptError as err:
         usage(programname)
     cores = 1
@@ -66,16 +72,17 @@ def main():
     enzyme = ''
     cov = 10
     qual = 33
+    devMode = 0
 
     # ==================           read args =======================================
     for option, arg in opts:
-	if option in ('-h','--help'):
+        if option in ('-h','--help'):
             usage(programname)
         elif option in ('-i','--inBam'):
-	    bamFile = arg
-	elif option in ('-o','--outBed'):
-	    outBedFile = arg
-	elif option in ('-r','--refFasta'):
+	        bamFile = arg
+        elif option in ('-o','--outBed'):
+	        outBedFile = arg
+        elif option in ('-r','--refFasta'):
             refFasta = arg
         elif option in ('-e','--enzyme'):
             enzyme = arg
@@ -83,7 +90,7 @@ def main():
             cores = arg
         elif option in ('-y','--hyp'):
             hyp = arg
-	elif option in ('-s','--seqErr'):
+        elif option in ('-s','--seqErr'):
             seqErr = float(arg)
         elif option in ('-t','--pThreshold'):
             pThreshold = float(arg)
@@ -93,6 +100,8 @@ def main():
             qual = int(arg)
         elif option in ('-c','--cov'):
             cov = int(arg)
+        elif option in ('-v','--dev'):
+            devMode = 1
         else:
             assert False, "unused option %s" %option
     message = '##################################\n' +\
@@ -117,13 +126,15 @@ def main():
     #extract pileup
     pileup(bamFile, refFasta, tempFile, programpath, qual, cov)
     #prediction
-    prediction(tempFile, outBedFile, cores, programpath, model, seqErr,pThreshold,enzyme, hyp)
+    prediction(tempFile, outBedFile, cores, programpath, model, \
+            seqErr,pThreshold,enzyme, hyp, devMode)
 
     #remove temp files
-    try:
-        os.remove(tempFile)
-    except OSError:
-        pass
+    if devMode== 0:
+        try:
+            os.remove(tempFile)
+        except OSError:
+            pass
 	
     # print summary
     usedTime = time.time() - start
