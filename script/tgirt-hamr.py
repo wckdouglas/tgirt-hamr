@@ -108,7 +108,7 @@ def main():
 
     # ========================   start pipeline =====================================
     start = time.time()
-    sample = outBedFile.split('/')[-1].rsplit('.',-1)
+    sample = outBedFile.split('/')[-1].rsplit('.',1)[0]
     resultpath = '/'.join(outBedFile.split('/')[:-1])
     if resultpath == '':
         resultpath = './'
@@ -120,10 +120,10 @@ def main():
     prediction(tempFile, outBedFile, cores, programpath, model, seqErr,pThreshold,enzyme, hyp)
 
     #remove temp files
-    #try:
-    #    os.remove(tempFile)
-    #except OSError:
-    #    pass
+    try:
+        os.remove(tempFile)
+    except OSError:
+        pass
 	
     # print summary
     usedTime = time.time() - start

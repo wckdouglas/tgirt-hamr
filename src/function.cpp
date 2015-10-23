@@ -141,9 +141,9 @@ string mergingModificationTypes(string base)
     {
         out = "m2G|m2,2G";
     }
-    else if (base == "m6A" || base == "m6,6A")
+    else if (base == "m1I" || base == "m1A")
 	{
-	    out = "m6A|m6,6A";
+	    out = "m1A|m1I";
 	}
 	else 
     {
@@ -175,8 +175,8 @@ int heterozygotePerBase(int A, int C, int T, int G, int cov)
 	baseCount[3] = G;
 	baseCount[4] = cov - accumulate(baseCount.begin(),baseCount.end() - 1,0);
 	sort(baseCount.begin(),baseCount.end(),greater<int>());
-	int result =  cov - ( baseCount[0] + baseCount[1]);
-	return result;
+	int het =  cov - ( baseCount[0] + baseCount[1]);
+	return het;
 }
 
 //[[Rcpp::export]]
@@ -190,17 +190,20 @@ DataFrame transformDF (DataFrame df, double seqErr, double pCutOff, Function bin
 	NumericVector mismatch(nrow), adjustedCov(nrow);
 	NumericVector newA(nrow), newC(nrow), newT(nrow), newG(nrow),newDeletion(nrow);
 	NumericVector p1(nrow),padj1(nrow),het(nrow),p2(nrow),padj2(nrow);
+    int predictorSums = 0 ;
 	double cov_i, mismatch_i;
 	for (int i = 0; i < A.size(); i++)
 	{
 		mismatch_i = A[i] + C[i] + T[i] + G[i];
+        predictorSums = mismatch_i + deletion[i];
 		cov_i = cov[i];
 		adjustedCov[i] = cov_i;
 		mismatch[i] = mismatch_i;
-		newA[i] = A[i]/mismatch_i;
-		newC[i] = C[i]/mismatch_i;
-		newT[i] = T[i]/mismatch_i;
-		newG[i] = G[i]/mismatch_i;
+		newA[i] = A[i]/predictorSums;
+		newC[i] = C[i]/predictorSums;
+		newT[i] = T[i]/predictorSums;
+		newG[i] = G[i]/predictorSums;
+        newDeletion[i] =  deletion[i]/predictorSums;
 		p1[i] =	as<double>(binom(mismatch_i,cov_i,seqErr));
 		het[i] = heterozygotePerBase(A[i],C[i],T[i],G[i],cov[i]);
 		p2[i] = as<double>(binom(het[i],cov_i,seqErr));

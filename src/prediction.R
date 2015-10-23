@@ -10,46 +10,33 @@ suppressMessages(library(doMC))
 suppressMessages(library(kernlab))
 suppressMessages(library(dplyr))
 
-fitControl <- trainControl(method = 'repeatedcv',
-	repeats = 10,
-	number = 6,
+#fitControl <- trainControl(method = 'repeatedcv',
+#	repeats = 10,
+#	number = 6,
+#	allowParallel = T)
+fitControl <- trainControl(method = 'LOOCV',
 	allowParallel = T)
 
 binomTest <- function(a,b,seqErr){
 	return(pbinom(b-a,b, p = 1- seqErr, lower.tail=T))
 }
 
-filterBase <- function(dataframe,base){
-	#subsetting data
-	dataframe <- subset(dataframe,ref == base)
-	if (base == 'A'){
-		df <- subset(dataframe,select=c(label,C,T,G,deletion))
-	}else if(base == 'C'){
-		df <- subset(dataframe,select=c(label,A,T,G,deletion))
-	}else if(base == 'T'){
-		df <- subset(dataframe,select=c(label,A,C,G,deletion))
-	}else if(base == 'G'){
-		df <- subset(dataframe,select=c(label,A,T,C,deletion))
-	}
-	return (df)
-}
-
 modeling <- function(base,df, model){
 	message('start modeling..')
-	df <- df %>% filterBase(base)
+    columns <- c('A','C','T','G','deletion','label')
+    columns <- columns[!grepl(base, columns)]
+	df <- df[df$ref==base,columns]
 	#split data
 	trainMat <- select(df, -label)
 	trainClass <- factor(df$label)
 	if (length(unique(trainClass)) > 1){
 		message ('Start training ',model,' ',base,'\n')
-		modelFit <- train(y = trainClass, 
-				x = trainMat,
-				method = model,
-				trControl = fitControl)
+		modelFit <- train(y = trainClass, x = trainMat, method = model, trControl = fitControl)
         message('Trained ',model, ' for ',base)
 		return(modelFit)
 	}else{
 		message ('Skipped ',model,' ',base)
+        return(unique(trainClass))
 	}
 }
 
@@ -58,17 +45,11 @@ predicting <- function(base,model,df){
 	#subsetting data
     message ('start prediction')
 	df <- subset(df,ref == base )
-	if (nrow(df) != 0){
-		if (base == 'A'){
-			dataMat <- subset(df,select=c(C,T,G,deletion))
-		}else if(base == 'C'){
-			dataMat <- subset(df,select=c(A,T,G,deletion))
-		}else if(base == 'T'){
-			dataMat <- subset(df,select=c(A,C,G,deletion))
-		}else if(base == 'G'){
-			dataMat <- subset(df,select=c(A,T,C,deletion))
-		}
-		df$label <- predict(model$finalModel,dataMat,type = 'class')
+    if (nrow(df)>2){
+        columns <- c('A','C','T','G','deletion')
+        columns <- columns[!grepl(base,columns)]
+	    dataMat <- df[df$ref==base,columns]
+	    df$label <- predict(model$finalModel,dataMat,type = 'class')
 		return (df)
 	}else{
 		return(0)
@@ -77,12 +58,12 @@ predicting <- function(base,model,df){
 
 fitAndPredict <- function(base,dataTable,predictionTable,model){
 	modelFit <- modeling(base,dataTable, model)
-	message('Established model')
-	if(!is.null(modelFit)){
+	message('Tuned model')
+	if(!is.character(modelFit)){
 		df <- predicting(base,modelFit,predictionTable)
 		return(df)
 	}else{
-		return (0)
+		return (df %>% mutate(label = modelFit))
 	}
 }
 
@@ -93,19 +74,21 @@ filterSets <-function(df,hyp){
 }
 
 main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath) {
-	dataTable <- str_c(dbpath,'/',enzyme,'Table.tsv')
-	dataTable <- dataTable %>%
+	dataTable <- str_c(dbpath,'/',enzyme,'Table.tsv') %>%
 		read_tsv(col_type= 'cncnnnnnnncc') %>%
 		transformDF(seqErr,pCutOff,binomTest) %>%
 		mutate(label =  mergeType(as.character(abbrev)))  %>%
 		filterSets(hyp) %>%
-        tbl_df()
-	dataTable <- dataTable %>%
-		group_by(label) %>%
-		summarize(count = n()) %>%
-		filter(count > 6) %>%
-		inner_join(dataTable)
-
+        group_by(label) %>% 
+        do(data.frame(count = nrow(.),
+                    A = .$A, 
+                    C = .$C, 
+                    T=.$T,G=.$G,
+                    ref = .$ref,
+                    deletion = .$deletion)) %>%
+		filter(count > 2) %>%
+        select(-count) %>%
+        tbl_df
 
 	predictTable <- predictTable %>%
 		read_tsv %>%
@@ -119,9 +102,8 @@ main <- function(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath)
 	result <- result[sapply(result,function(x) is.data.frame(x))] %>%
 		do.call(rbind,.) 
 
-    if (length(result)<1){
-        stop("No modification sites! \n")
-    }else{
+    if (length(result)<1){stop("No modification sites! \n")}
+    else{
         result %>%
 #	        select(chrom, start, end, ref, cov, strand, A, C, T, G, deletion, label) %>%
 	        select(chrom, start, end, ref, cov, strand, label) %>%
