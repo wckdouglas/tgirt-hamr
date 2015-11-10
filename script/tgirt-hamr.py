@@ -124,7 +124,7 @@ def main():
 
     tempFile = resultpath + '/' + sample + '.tsv'
     #extract pileup
-    pileup(bamFile, refFasta, tempFile, programpath, qual, cov)
+    #pileup(bamFile, refFasta, tempFile, programpath, qual, cov)
     #prediction
     prediction(tempFile, outBedFile, cores, programpath, model, \
             seqErr,pThreshold,enzyme, hyp, devMode)
