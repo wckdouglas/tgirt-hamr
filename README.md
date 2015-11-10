@@ -28,4 +28,4 @@ Run:
 
 Dependencies:    
 softwares: R >=3.1.0, python = 2.7, samtools >= 1.2, gcc > 4.4.5     
-R-package: dplyr, caret, readr, stringr, tidyr, Rcpp, getopt, doMC
+R-package: dplyr, caret, readr, stringr, tidyr, Rcpp, getopt, doMC, tgirthamr

@@ -9,17 +9,10 @@ suppressMessages(library(caret))
 suppressMessages(library(doMC))
 suppressMessages(library(kernlab))
 suppressMessages(library(dplyr))
+suppressMessages(library(tgirthamr))
 
-#fitControl <- trainControl(method = 'repeatedcv',
-#   repeats = 10,
-#   number = 6,
-#   allowParallel = T)
 fitControl <- trainControl(method = 'LOOCV',
     allowParallel = T)
-
-binomTest <- function(a,b,seqErr){
-    return(pbinom(b-a,b, p = 1- seqErr, lower.tail=T))
-}
 
 modeling <- function(base,df, model){
     message('start modeling..')
@@ -39,7 +32,6 @@ modeling <- function(base,df, model){
         return(unique(trainClass))
     }
 }
-
 
 predicting <- function(base,model,df){
     #subsetting data
@@ -72,7 +64,7 @@ main <- function(predictTable,model,enzyme,seqErr,
                 pCutOff,resultFile,hyp,dbpath,devMode) {
     dataTable <- str_c(dbpath,'/',enzyme,'Table.tsv') %>%
         read_tsv(col_type= 'cncnnnnnnncc') %>%
-        transformDF(seqErr,pCutOff,binomTest) %>%
+        transformPredict(seqErr,pCutOff,binomTest) %>%
         mutate(label =  mergeType(as.character(abbrev)))  %>%
         filterSets(hyp) %>%
         group_by(label) %>% 
@@ -88,7 +80,7 @@ main <- function(predictTable,model,enzyme,seqErr,
 
     predictTable <- predictTable %>%
         read_tsv %>%
-        transformDF(seqErr,pCutOff,binomTest) %>%
+        transformPredict(seqErr,pCutOff,binomTest) %>%
         filterSets(hyp) 
     message('Read Data!')
     
