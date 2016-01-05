@@ -25,7 +25,7 @@ def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,en
         dev = ' '
     command = 'Rscript %s/src/prediction.R -o %s -t %s ' %(programpath,resultBed,cores)+\
                 '-i %s -e %s -h %s -s %.4f -p %.4f ' %(inFile,enzyme,hyp,seqErr,pThreshold)+\
-                '-m %s -d %s/table -f %s/src '  %(model, programpath,programpath) +\
+                '-m %s '  %(model) +\
                 dev
     print command
     os.system(command)
