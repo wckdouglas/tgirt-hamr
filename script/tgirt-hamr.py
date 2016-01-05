@@ -4,7 +4,7 @@ from __future__ import division
 import os
 import sys
 import time
-import getopt
+import argparse
 
 def pileup(bamFile, refFasta, resultFile, programpath, qualThresh, covThresh):
     start = time.time()
@@ -33,88 +33,46 @@ def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,en
     sys.stderr.write('Prediction used time: %.3f min\n' %(usedtime/60))
     return 0
 
-def usage(programname):
-    sys.stderr.write('usage: python %s [options] -e <TGIRT> -i <input bam> -o <output bed> -r <reference fasta>\n' %programname)
-    sys.stderr.write('[options]\n')
-    sys.stderr.write('-e, --enzyme <gsi>|<tei>            This can be <gsi> or <tei> for GsI-IIc and TeI4c libraries respectively\n')
-    sys.stderr.write('-i, --inBam <bamfile>               input bam file\n')
-    sys.stderr.write('-o, --outBed <bedfile>              output bed file\n')
-    sys.stderr.write('-r, --refFasta <fasta file>         reference fasta file\n')
-    sys.stderr.write('-p, --cores <int>                   number of cores to use                                         default: 1 \n')
-    sys.stderr.write('-y, --hyp <hyp1>|<hyp2>             hypothesis to use, can be <hyp1> or <hyp2>                     default: hyp2\n')
-    sys.stderr.write('-s, --seqErr <float>                sequencing error probability                                   default: 0.01\n')
-    sys.stderr.write('-t, --pThreshold <float>            False discovery rate cut off                                   default: 0.01\n')
-    sys.stderr.write('-m, --model <knn>                   model for prediction, can be anything available in R::caret    default: knn\n')
-    sys.stderr.write('-q, --qual <int>                    base quality cut off for retaining bases from read             default: 33\n')
-    sys.stderr.write('-c, --cov <int>                     coverage cutoff for position to retain                         default: 10\n')
-    sys.stderr.write('-d, --dev                           retain intermediate files\n')
-    sys.stderr.write('-h, --help                          print out usage\n')
-    sys.exit()
-
 def main():
     programpath = '/'.join(os.path.abspath(__file__).split('/')[:-2])
     programname = sys.argv[0]
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], \
-                "e:i:o:r:p:y:s:t:m:q:c:hv", \
-                ['enzyme=','inBam=', 'outBed=','refFasta=','cores=',\
-                'hyp=','seqErr=','pThreshold=','model=','qual=','cov=','help','dev'])
-    except getopt.GetoptError as err:
-        usage(programname)
-    cores = 1
-    hyp = 'hyp2'
-    seqErr = 0.01
-    pThreshold = 0.01
-    model = 'knn'
-    bamFile = ''
-    outBedFile = ''
-    refFasta = ''
-    enzyme = ''
-    cov = 10
-    qual = 33
-    devMode = 0
+    parser = argparse.ArgumentParser(description='Pipeline for running TGIRT-HAMR, predicting modifications in TGIRT-seq data.')
+    parser.add_argument('-i','--inBam', help='input bam file', required=True)
+    parser.add_argument('-o','--outBed', help='output bed file', required=True)
+    parser.add_argument('-r','--refFasta', help='reference fasta file', required=True)
+    parser.add_argument('-e','--enzyme', help='This can be <gsi> or <tei> for GsI-IIc and TeI4c libraries respectively', choices=['gsi','tei'], required=True)
+    parser.add_argument('-p','--cores', help='number of cores to use (default: 1)', default = 1, type=int)
+    parser.add_argument('-y','--hyp', help='hypothesis to use, can be <hyp1> or <hyp2> (default: hyp2)', default = 'hyp2', choices = ['hyp1','hyp2'])
+    parser.add_argument('-s','--seqErr', help='sequencing error probability (default: 0.01)', default = 0.01, type=float)
+    parser.add_argument('-t','--pThreshold', help='False discovery rate cut off (default: 0.01)', default = 0.01, type=float)
+    parser.add_argument('-m','--model', help='model for prediction, can be anything available in R::caret (default: knn)', default = 'knn')
+    parser.add_argument('-q','--qual', help='base quality cut off for retaining bases from read (default: 33)', default = 33 , type=int)
+    parser.add_argument('-c','--cov', help='coverage cutoff for position to retain (default: 10)', default = 10 , type=int)
+    parser.add_argument('-v','--dev', help='developer mode',  action='store_true')
+    
+    args = parser.parse_args()
+    bamFile = args.inBam
+    outBedFile = args.outBed
+    refFasta = args.refFasta
+    enzyme = args.enzyme
+    cores = args.cores
+    hyp = args.hyp
+    seqErr = args.seqErr
+    pThreshold = args.pThreshold
+    model = args.model
+    qual = args.qual
+    cov = args.cov
+    dev = args.dev
 
-    # ==================           read args =======================================
-    for option, arg in opts:
-        if option in ('-h','--help'):
-            usage(programname)
-        elif option in ('-i','--inBam'):
-	        bamFile = arg
-        elif option in ('-o','--outBed'):
-	        outBedFile = arg
-        elif option in ('-r','--refFasta'):
-            refFasta = arg
-        elif option in ('-e','--enzyme'):
-            enzyme = arg
-        elif option in ('-p','--cores'):
-            cores = arg
-        elif option in ('-y','--hyp'):
-            hyp = arg
-        elif option in ('-s','--seqErr'):
-            seqErr = float(arg)
-        elif option in ('-t','--pThreshold'):
-            pThreshold = float(arg)
-        elif option in ('-m','--model'):
-            model = arg
-        elif option in ('-q','--qual'):
-            qual = int(arg)
-        elif option in ('-c','--cov'):
-            cov = int(arg)
-        elif option in ('-v','--dev'):
-            devMode = 1
-        else:
-            assert False, "unused option %s" %option
+    devMode = 1 if dev else 0
     message = '##################################\n' +\
               '#Using seqErr:        %.3f\n' %(seqErr) +\
               '#Using cores:         %s\n' %(cores) +\
               '#Using FDR threshold: %.3f\n' %(pThreshold) + \
+              '#Using reference: %s\n' %(refFasta) + \
               '#################################\n'
     sys.stderr.write(message)
 	
-    if bamFile == '' or outBedFile == '' or refFasta == '' or enzyme == '':
-        sys.stderr.write('options: -i, -r, -e, -o are required!!!\n')
-        usage(programname)
-
     # ========================   start pipeline =====================================
     start = time.time()
     sample = outBedFile.split('/')[-1].rsplit('.',1)[0]
