@@ -13,7 +13,6 @@ opt <- getopt(matrix(c(
     'hyp',       'h', 1, 'character',
     'seqErr',    's', 1, 'numeric',
     'pCutOff',   'p', 1, 'numeric',
-    'dbpath',    'd', 1, 'character',
     'dir',       'f',2,'character',
     'devMode',   'v',2, 'numeric'),
     byrow=T,ncol=4))
@@ -27,7 +26,6 @@ path <- opt$dir
 
 seqErr <- opt$seqErr
 pCutOff <- opt$pCutOff
-dbpath <- opt$dbpath
 if (!is.null(opt$devMode)){
     devMode = 1
 }else{
