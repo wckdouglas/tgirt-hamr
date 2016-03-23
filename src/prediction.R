@@ -7,7 +7,7 @@ suppressMessages(library(doMC))
 opt <- getopt(matrix(c(
     'model',     'm', 1,"character",
     'resultFile','o', 1, "character",
-    'threads',   't', 1, "numeric",
+    'threads',   't', 2, "numeric",
     'dt',        'i', 1, 'character',
     'enzyme',    'e', 1, 'character',
     'hyp',       'h', 1, 'character',
@@ -36,5 +36,5 @@ if (!is.null(opt$devMode)){
 
 #============== run program ========================
 message('Using: ',model,' for ', enzyme)
-tgirthamr::tgirthamr(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,dbpath,devMode)
+tgirthamr::tgirthamr(predictTable,model,enzyme,seqErr,pCutOff,resultFile,hyp,devMode)
 message('Finished: ',model,' for ',enzyme)
