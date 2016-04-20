@@ -33,7 +33,7 @@ void printTable(string chrom, string start, string ref,
 				int insertion, int deletion, int refCount, int refCountrev)
 {
 	char strand ;
-	int mispos = atoi(start.c_str()) - 1;
+	int mispos = atoi(start.c_str());
 	int end = mispos + 1;
 	int cov;
 	string realRef;
