@@ -33,7 +33,8 @@ void printTable(string chrom, string start, string ref,
 				int insertion, int deletion, int refCount, int refCountrev)
 {
 	char strand ;
-	int end = atoi(start.c_str()) + 1;
+	int mispos = atoi(start.c_str()) - 1;
+	int end = mispos + 1;
 	int cov;
 	string realRef;
 	int adenosine, thymine, cytidine, guanosine;
@@ -68,7 +69,7 @@ void printTable(string chrom, string start, string ref,
 	if (print == 1)
 	{
 		cov = adenosine + cytidine + thymine + guanosine + referenceCount;
-		cout << chrom << '\t' <<start << '\t' << end << '\t';
+		cout << chrom << '\t' << mispos << '\t' << end << '\t';
 		cout << realRef << '\t' << cov << '\t' << strand << '\t';
 		cout << adenosine << '\t' << cytidine << '\t' << thymine << '\t' << guanosine << '\t';
 		cout << insertion << '\t' << deletion << '\n';
@@ -124,8 +125,8 @@ void processLine( stringList columns, int qualThreshold, int coverageThreshold)
 	            reads = columns[4];
 	            baseQuals = columns[5];
 	            assert ( baseQuals.length() == cov ) ;
-		    extractMismatches(reads, baseQuals, cov, transcriptID, 
-				pos, ref, qualThreshold, coverageThreshold);
+				extractMismatches(reads, baseQuals, cov, transcriptID, 
+					pos, ref, qualThreshold, coverageThreshold);
             }
         }
     }

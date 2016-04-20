@@ -7,12 +7,16 @@ suppressMessages(library(doMC))
 opt <- getopt(matrix(c(
     'model',     'm', 1,"character",
     'resultFile','o', 1, "character",
-    'threads',   't', 1, "numeric",
+    'threads',   't', 2, "numeric",
     'dt',        'i', 1, 'character',
     'enzyme',    'e', 1, 'character',
     'hyp',       'h', 1, 'character',
     'seqErr',    's', 1, 'numeric',
     'pCutOff',   'p', 1, 'numeric',
+<<<<<<< HEAD
+=======
+    'dir',       'f',2,'character',
+>>>>>>> 3c46f422b7a09f7240965c0faa20cc884bfd64ca
     'devMode',   'v',2, 'numeric'),
     byrow=T,ncol=4))
 model <- opt$model
@@ -23,7 +27,10 @@ hyp <- opt$hyp
 enzyme <- opt$enzyme
 seqErr <- opt$seqErr
 pCutOff <- opt$pCutOff
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3c46f422b7a09f7240965c0faa20cc884bfd64ca
 if (!is.null(opt$devMode)){
     devMode = 1
 }else{

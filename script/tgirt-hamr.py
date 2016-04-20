@@ -25,7 +25,11 @@ def prediction(inFile,resultBed, cores, programpath, model, seqErr,pThreshold,en
         dev = ' '
     command = '/home/cdw2854/src/miniconda2/bin/Rscript %s/src/prediction.R -o %s -t %s ' %(programpath,resultBed,cores)+\
                 '-i %s -e %s -h %s -s %.4f -p %.4f ' %(inFile,enzyme,hyp,seqErr,pThreshold)+\
+<<<<<<< HEAD
                 '-m %s '  %(model) +\
+=======
+                '-m %s  -f %s/src '  %(model, programpath) +\
+>>>>>>> 3c46f422b7a09f7240965c0faa20cc884bfd64ca
                 dev
     print command
     os.system(command)
