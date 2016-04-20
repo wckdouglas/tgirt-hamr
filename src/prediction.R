@@ -13,10 +13,6 @@ opt <- getopt(matrix(c(
     'hyp',       'h', 1, 'character',
     'seqErr',    's', 1, 'numeric',
     'pCutOff',   'p', 1, 'numeric',
-<<<<<<< HEAD
-=======
-    'dir',       'f',2,'character',
->>>>>>> 3c46f422b7a09f7240965c0faa20cc884bfd64ca
     'devMode',   'v',2, 'numeric'),
     byrow=T,ncol=4))
 model <- opt$model
@@ -27,10 +23,7 @@ hyp <- opt$hyp
 enzyme <- opt$enzyme
 seqErr <- opt$seqErr
 pCutOff <- opt$pCutOff
-<<<<<<< HEAD
 
-=======
->>>>>>> 3c46f422b7a09f7240965c0faa20cc884bfd64ca
 if (!is.null(opt$devMode)){
     devMode = 1
 }else{
